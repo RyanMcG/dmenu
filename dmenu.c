@@ -18,6 +18,7 @@
 #define MIN(a,b)              ((a) < (b) ? (a) : (b))
 #define MAX(a,b)              ((a) > (b) ? (a) : (b))
 #define DEFFONT "fixed" /* xft example: "Monospace-11" */
+#define ROUND(x) (x >=0 ? (int) ((x) + 0.5) : (int) (x - 0.5))
 
 typedef struct Item Item;
 struct Item {
@@ -42,7 +43,7 @@ static void setup(void);
 static void usage(void);
 
 static char text[BUFSIZ] = "";
-static int bh, mw, mh;
+static int bh, mw, mh, dh;
 static int inputw, promptw;
 static size_t cursor = 0;
 static const char *font = NULL;
@@ -52,9 +53,10 @@ static const char *normfgcolor = "#bbbbbb";
 static const char *selbgcolor  = "#005577";
 static const char *selfgcolor  = "#eeeeee";
 static unsigned int lines = 0, line_height = 0;
-static int xoffset = 0;
+static Bool center = False;
 static int yoffset = 0;
-static int width = 0;
+static int padding_in_px = 0;
+static float padding = 0.0;
 static ColorSet *normcol;
 static ColorSet *selcol;
 static Atom clip, utf8;
@@ -93,15 +95,13 @@ main(int argc, char *argv[]) {
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
 		}
+		else if(!strcmp(argv[i], "-c")) center = True;
 		else if(i+1 == argc)
 			usage();
 		/* these options take one argument */
- 		else if(!strcmp(argv[i], "-x"))
- 			xoffset = atoi(argv[++i]);
  		else if(!strcmp(argv[i], "-y"))
  			yoffset = atoi(argv[++i]);
- 		else if(!strcmp(argv[i], "-w"))
- 			width = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "-d")) padding = atof(argv[++i]);
 		else if(!strcmp(argv[i], "-l"))   /* number of lines in vertical list */
 			lines = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-h"))   /* minimum height of single line */
@@ -597,7 +597,8 @@ setup(void) {
 					break;
 
 		x = info[i].x_org;
-		y = info[i].y_org + (topbar ? yoffset : info[i].height - mh - yoffset);
+		y = info[i].y_org;
+		dh = info[i].height;
 		mw = info[i].width;
 		XFree(info);
 	}
@@ -605,12 +606,18 @@ setup(void) {
 #endif
 	{
 		x = 0;
-		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - mh - yoffset;
+		y = 0;
+		dh = DisplayHeight(dc->dpy, screen);
 		mw = DisplayWidth(dc->dpy, screen);
 	}
 
-	x += xoffset;
-	mw = width ? width : mw;
+
+	y += center ? ((dh - mh) / 2) : (topbar ? yoffset : dh - mh - yoffset);
+
+	padding_in_px = ROUNT(padding * mw);
+	x += padding_in_px;
+	mw = MAX(0, mw - (padding_in_px * 2));
+
 	promptw = (prompt && *prompt) ? textw(dc, prompt) : 0;
 	inputw = MIN(inputw, mw/3);
 	match();
@@ -636,8 +643,8 @@ setup(void) {
 
 void
 usage(void) {
-	fputs("usage: dmenu [-b] [-q] [-f] [-i] [-l lines] [-p prompt] [-fn font]\n"
-	      "             [-x xoffset] [-y yoffset] [-h height] [-w width]\n"
+	fputs("usage: dmenu [-b] [-q] [-f] [-i] [-c] [-l lines] [-p prompt] [-fn font]\n"
+	      "             [-y yoffset] [-h height] [-d padding]\n"
 	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
 	exit(EXIT_FAILURE);
 }
