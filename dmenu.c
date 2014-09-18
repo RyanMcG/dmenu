@@ -53,6 +53,7 @@ static const char *normfgcolor = "#bbbbbb";
 static const char *selbgcolor  = "#005577";
 static const char *selfgcolor  = "#eeeeee";
 static unsigned int lines = 0, line_height = 0;
+static float line_height_ratio = 1.1;
 static Bool center = False;
 static int yoffset = 0;
 static int padding_in_px = 0;
@@ -106,6 +107,8 @@ main(int argc, char *argv[]) {
 			lines = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-h"))   /* minimum height of single line */
 			line_height = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "-lr"))   /* minimum height of single line */
+			line_height_ratio = atof(argv[++i]);
 		else if(!strcmp(argv[i], "-p"))   /* adds prompt to left of input field */
 			prompt = argv[++i];
 		else if(!strcmp(argv[i], "-fn"))  /* font or font set */
@@ -565,7 +568,7 @@ setup(void) {
 	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
 
 	/* calculate menu geometry */
-	bh = (line_height > dc->font.height + 2) ? line_height : dc->font.height + 2;
+	bh = ROUND(((line_height > dc->font.height) ? line_height : dc->font.height) * line_height_ratio);
 	lines = MAX(lines, 0);
 	mh = (lines + 1) * bh;
 #ifdef XINERAMA
