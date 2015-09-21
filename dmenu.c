@@ -617,7 +617,7 @@ setup(void) {
 
 	y += center ? ((dh - mh) / 2) : (topbar ? yoffset : dh - mh - yoffset);
 
-	padding_in_px = ROUNT(padding * mw);
+	padding_in_px = ROUND(padding * mw);
 	x += padding_in_px;
 	mw = MAX(0, mw - (padding_in_px * 2));
 
